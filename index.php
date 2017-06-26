@@ -6,6 +6,4 @@ use System\Application;
 
 $file = new File(__DIR__);
 $app = new Application($file);
-(new System\Test());
-use App\Controllers\Users;
-new Users;
+$app->run();

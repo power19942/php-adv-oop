@@ -10,11 +10,52 @@ class Application
         $this->share('file',$file);
         $this->registerClasses();
         $this->loadHelpers();
-        pre($this->file);
     }
-
+    /*
+    * Run The Application
+    * @return Void
+    */
+    public function run(){
+        $this->session->start();
+    }
     public function share($key,$value){
         $this->container[$key]=$value;
+    }
+    /*
+    *check if key in core alias
+    *@param $alias
+    *@return boolean
+    */
+    public function isCoreAlias($alias){
+        $coreClasses = $this->coreClasses();
+        return isset($coreClasses[$alias]);
+    }
+    /*
+    * create new object for the core class based on the given alias
+    * @param string $alias
+    * @return object
+    */
+    public function createNewCoreObject($alias){
+        $coreClasses = $this->coreClasses();
+        $object = $coreClasses[$alias];
+        return new $object($this);
+    }
+
+    /*
+    *get all core classes with its aliases
+    *@return array
+    */
+    public function coreClasses(){
+        return[
+          'request'       => 'System\\Http\\Request',
+          'response'      => 'System\\Http\\Response',
+          'session'       => 'System\\Session',
+          'cookie'        => 'System\\Cookie',
+          'loader'        => 'System\\Loader',
+          'html'          => 'System\\Html',
+          'db'            => 'System\\Database',
+          'view'          => 'System\\View\\ViewFactory',
+        ];
     }
     /**
      * Get shared value dynamically
@@ -30,7 +71,20 @@ class Application
      * @return mixed|null
      */
     public function get($key){
-        return isset($this->container[$key]) ? $this->container[$key] : null ;
+        if (!$this->isSharing($key)){
+            if ($this->isCoreAlias($key)){
+                $this->share($key,$this->createNewCoreObject($key));
+            }else{
+                die('<b>.$key.</b> not found in application container');
+            }
+        }
+        return $this->container[$key];
+    }
+    /*
+    *determine if given key is shared throug application
+    */
+    public function isSharing($key){
+        return isset($this->container[$key]);
     }
 
     public function registerClasses(){
