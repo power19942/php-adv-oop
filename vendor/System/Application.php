@@ -4,12 +4,20 @@ namespace System;
 class Application
 {
     private $container=[];
+    private static $instance;
 
-    function __construct(File $file)
+    private function __construct(File $file)
     {
         $this->share('file',$file);
         $this->registerClasses();
         $this->loadHelpers();
+    }
+
+    public static function getInstance($file = null){
+        if (is_null(static::$instance)){
+            return static::$instance = new static($file);
+        }
+        return static::$instance;
     }
     /*
     * Run The Application
@@ -17,6 +25,9 @@ class Application
     */
     public function run(){
         $this->session->start();
+        $this->request->prepareUrl();
+        $this->file->require('App/index.php');
+        list($controller,$method,$arguments) = $this->route->getProperRoute();
     }
     public function share($key,$value){
         $this->container[$key]=$value;
@@ -50,6 +61,7 @@ class Application
           'request'       => 'System\\Http\\Request',
           'response'      => 'System\\Http\\Response',
           'session'       => 'System\\Session',
+          'route'       => 'System\\Route',
           'cookie'        => 'System\\Cookie',
           'loader'        => 'System\\Loader',
           'html'          => 'System\\Html',
@@ -93,9 +105,9 @@ class Application
     public function load($class){
 
         if(strpos($class,'App')===0){
-            $file = $this->file->to($class.'.php');
+            $file = $class.'.php';
         }else{
-            $file = $this->file->toVendor($class.'.php');
+            $file = 'vendor/'.$class.'.php';
         }
         if($this->file->exists($file)){
             $this->file->require($file);
@@ -107,7 +119,7 @@ class Application
      * @return void
      * */
     public function loadHelpers(){
-        $this->file->require($this->file->toVendor('helpers.php'));
+        $this->file->require('vendor/helpers.php');
     }
 
 
